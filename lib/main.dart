@@ -7,17 +7,19 @@ class ListApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       title: 'Todo Application',
-      home: Todolist(title: 'Todo Application'),
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
+      home: const Todolist(),
     );
   }
 }
 
 class Todolist extends StatefulWidget {
-  const Todolist({Key? key, required this.title}) : super(key: key);
-
-  final String title;
+  const Todolist({Key? key}) : super(key: key);
 
   @override
   // ignore: library_private_types_in_public_api
@@ -25,75 +27,118 @@ class Todolist extends StatefulWidget {
 }
 
 class _TodolistState extends State<Todolist> {
-  final List<String> _items = ['Todo 1', 'Todo 2', 'Todo 3'];
-  final List<bool> _checked = [false, false, false];
+  final List<Todo> _todos = [
+    Todo(name: 'Todo 1'),
+    Todo(name: 'Todo 2'),
+    Todo(name: 'Todo 3'),
+  ];
+
+  final TextEditingController _textEditingController = TextEditingController();
 
   void _addItem(String item) {
     setState(() {
-      _items.add(item);
-      _checked.add(false);
+      _todos.add(Todo(name: item));
     });
   }
 
   void _removeItem(int index) {
     setState(() {
-      _items.removeAt(index);
-      _checked.removeAt(index);
+      _todos.removeAt(index);
     });
   }
 
   void _toggleChecked(int index) {
     setState(() {
-      _checked[index] = !_checked[index];
+      _todos[index].isChecked = !_todos[index].isChecked;
     });
   }
 
   Future<void> _displayAddItemDialog(BuildContext context) async {
-    return showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text('Add a new todo'),
-            content: TextField(
-              onSubmitted: (value) {
-                _addItem(value);
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Add a new todo'),
+          content: TextField(
+            controller: _textEditingController,
+            decoration: const InputDecoration(hintText: 'Enter todo here'),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
                 Navigator.of(context).pop();
+                _textEditingController.clear();
               },
             ),
-          );
-        });
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                if (_textEditingController.text.isNotEmpty) {
+                  _addItem(_textEditingController.text);
+                  Navigator.of(context).pop();
+                  _textEditingController.clear();
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: const Text('Todo Application'),
+        centerTitle: true,
+        elevation: 4,
+        titleTextStyle: const TextStyle(
+          color: Colors.black,
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+        ),
       ),
-      body: ListView.builder(
-        itemCount: _items.length,
-        itemBuilder: (BuildContext context, int index) {
-          return ListTile(
-            trailing: IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: () {
-                _removeItem(index);
-              },
-            ),
-            title: Text(
-              _items[index],
-              style: TextStyle(
-                decoration: _checked[index]
-                    ? TextDecoration.lineThrough
-                    : TextDecoration.none,
-              ),
-            ),
-            leading: Checkbox(
-              value: _checked[index],
-              onChanged: (bool? value) {
-                _toggleChecked(index);
-              },
-            ),
+      body: StatefulBuilder(
+        builder: (context, setState) {
+          return ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: _todos.length,
+            itemBuilder: (context, index) {
+              return InkWell(
+                splashColor: Colors.transparent,
+                child: Card(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  child: ListTile(
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: () {
+                        _removeItem(index);
+                      },
+                    ),
+                    title: Text(
+                      _todos[index].name,
+                      style: TextStyle(
+                        decoration: _todos[index].isChecked
+                            ? TextDecoration.lineThrough
+                            : TextDecoration.none,
+                        fontSize: 18,
+                      ),
+                    ),
+                    leading: Checkbox(
+                      value: _todos[index].isChecked,
+                      onChanged: (value) {
+                        _toggleChecked(index);
+                      },
+                    ),
+                  ),
+                ),
+              );
+            },
+            separatorBuilder: (context, index) {
+              return Container();
+            },
           );
         },
       ),
@@ -106,4 +151,11 @@ class _TodolistState extends State<Todolist> {
       ),
     );
   }
+}
+
+class Todo {
+  final String name;
+  bool isChecked;
+
+  Todo({required this.name, this.isChecked = false});
 }
