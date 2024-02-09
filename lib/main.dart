@@ -20,8 +20,7 @@ class Todolist extends StatefulWidget {
   final String title;
 
   @override
-  // ignore: library_private_types_in_public_api
-  _TodolistState createState() => _TodolistState();
+  State<Todolist> createState() => _TodolistState();
 }
 
 class _TodolistState extends State<Todolist> {
